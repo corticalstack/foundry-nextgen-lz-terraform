@@ -1,0 +1,485 @@
+<mxfile host="65bd71144e">
+    <diagram name="Azure AI Foundry - Dev Environment" id="foundry-dev-arch">
+        <mxGraphModel dx="4932" dy="3532" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1900" pageHeight="1920" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Azure AI Foundry — Dev Environment (Private Networking)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="-2545" y="-1893" width="1840" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_zone" value="External / Internet" style="swimlane;fontStyle=1;align=center;startSize=28;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-1841" y="-1812" width="634" height="122" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_clients" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/general/Globe.svg;" parent="ext_zone" vertex="1">
+                    <mxGeometry x="136.5" y="35" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_clients_lbl" value="API Clients / Teams" style="text;html=1;align=center;verticalAlign=top;fontSize=10;" parent="ext_zone" vertex="1">
+                    <mxGeometry x="106.5" y="91" width="120" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_note" value="Teams access AI capabilities via APIM gateway (HTTPS:443, api-key auth).&#xa;Each team has a dedicated APIM subscription key. Rate limit: 100 calls/60s." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=2;" parent="ext_zone" vertex="1">
+                    <mxGeometry x="252" y="43" width="351" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="vnet" value="vnet-contoso (10.0.0.0/16) - Sweden Central" style="swimlane;fontStyle=1;align=center;startSize=32;fillColor=default;strokeColor=#6c8ebf;strokeWidth=4;fontSize=12;spacingLeft=10;expand=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-2006" y="-1184" width="659" height="1551" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_bas" value="AzureBastionSubnet  (10.0.4.0/26)" style="swimlane;fontStyle=1;align=center;startSize=24;fillColor=#CCE5FF;strokeColor=#3399FF;strokeWidth=2;dashed=1;fontSize=10;spacingLeft=6;collapsible=0;" parent="vnet" vertex="1">
+                    <mxGeometry x="18" y="50" width="300" height="159" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="" style="group" parent="snet_bas" vertex="1" connectable="0">
+                    <mxGeometry y="44" width="104" height="86" as="geometry"/>
+                </mxCell>
+                <mxCell id="bastion" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Bastions.svg;" parent="5" vertex="1">
+                    <mxGeometry x="24" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="bastion_lbl" value="bas-contoso&lt;br&gt;SKU: Basic" style="text;html=1;align=center;verticalAlign=top;fontSize=10;" parent="5" vertex="1">
+                    <mxGeometry y="56" width="104" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="group" parent="snet_bas" vertex="1" connectable="0">
+                    <mxGeometry x="141" y="44" width="104" height="86" as="geometry"/>
+                </mxCell>
+                <mxCell id="pip_bas" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Public_IP_Addresses.svg;" parent="6" vertex="1">
+                    <mxGeometry x="24" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="pip_bas_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pip-bastion&lt;br&gt;Standard/Static&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=9;" parent="6" vertex="1">
+                    <mxGeometry y="56" width="104" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_jump" value="snet-jump  (10.0.3.0/24)  |  NSG: nsg-jump" style="swimlane;fontStyle=1;align=center;startSize=24;fillColor=#CCE5FF;strokeColor=#3399FF;strokeWidth=2;fontSize=10;spacingLeft=6;collapsible=0;dashed=1;" parent="vnet" vertex="1">
+                    <mxGeometry x="339" y="50" width="300" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="group" parent="snet_jump" vertex="1" connectable="0">
+                    <mxGeometry x="176" y="42" width="108" height="96" as="geometry"/>
+                </mxCell>
+                <mxCell id="natgw" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/NAT.svg;" parent="3" vertex="1">
+                    <mxGeometry x="24" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="natgw_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;nat-contoso&lt;br&gt;+ pip-nat&lt;br&gt;(outbound)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=9;" parent="3" vertex="1">
+                    <mxGeometry y="56" width="108" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="group" parent="snet_jump" vertex="1" connectable="0">
+                    <mxGeometry x="17" y="38" width="108" height="96" as="geometry"/>
+                </mxCell>
+                <mxCell id="jumpvm" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/compute/Virtual_Machine.svg;" parent="4" vertex="1">
+                    <mxGeometry x="26" y="6" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="jumpvm_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;vm-jump&lt;br&gt;Standard_B2s&lt;br&gt;Win Server 2022&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=9;" parent="4" vertex="1">
+                    <mxGeometry y="56" width="108" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_agents" value="snet-agents  (10.0.1.0/24)&#xa;Delegated: Microsoft.App/environments" style="swimlane;fontStyle=1;align=center;startSize=36;fillColor=#CCE5FF;strokeColor=#3399FF;strokeWidth=2;dashed=1;fontSize=10;spacingLeft=6;collapsible=0;" parent="vnet" vertex="1">
+                    <mxGeometry x="18" y="228" width="622" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_agents_lbl" value="Core AI Foundry Agent Service&#xa;VNet Injection (aif-core network injection)" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=2;" parent="snet_agents" vertex="1">
+                    <mxGeometry x="1" y="40" width="621" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_agents_spoke" value="snet-agents-spoke  (10.0.5.0/24)&#xa;Delegated: Microsoft.App/environments" style="swimlane;fontStyle=1;align=center;startSize=36;fillColor=#CCE5FF;strokeColor=#3399FF;strokeWidth=2;dashed=1;fontSize=10;spacingLeft=6;collapsible=0;" parent="vnet" vertex="1">
+                    <mxGeometry x="18" y="351" width="621" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_agents_spoke_lbl" value="Spoke AI Foundry Agent Service&#xa;VNet Injection (aif-spoke-multi network injection)" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=2;" parent="snet_agents_spoke" vertex="1">
+                    <mxGeometry y="40" width="621" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_apim" value="snet-apim  (10.0.2.0/24)  |  NSG: nsg-apim  |  Delegated: Microsoft.Web/serverFarms" style="swimlane;fontStyle=1;align=center;startSize=24;fillColor=#CCE5FF;strokeColor=#3399FF;strokeWidth=2;fontSize=10;spacingLeft=6;collapsible=0;dashed=1;" parent="vnet" vertex="1">
+                    <mxGeometry x="18" y="476" width="622" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_apim_note" value="APIM StandardV2 outbound VNet integration (virtual_network_type=External) — routes all APIM→backend calls through this subnet to&amp;nbsp;&lt;div&gt;reach private endpoints.&amp;nbsp;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;Delegation: Microsoft.Web/serverFarms.. NSG allows: HTTPS:443, APIM Mgmt:3443, LB:6390 inbound.&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=2;" parent="snet_apim" vertex="1">
+                    <mxGeometry x="10" y="28" width="592" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="snet_pe" value="snet-pe  (10.0.0.0/24)  —  Private Endpoints  |  network_policies: Disabled" style="swimlane;fontStyle=1;align=center;startSize=28;fillColor=#CCE5FF;strokeColor=#3399FF;strokeWidth=2;dashed=1;fontSize=11;spacingLeft=6;collapsible=0;" parent="vnet" vertex="1">
+                    <mxGeometry x="22" y="710" width="618" height="820" as="geometry"/>
+                </mxCell>
+                <mxCell id="dns_header" value="Private DNS Zones (linked to vnet-{customer})" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=1;" parent="snet_pe" vertex="1">
+                    <mxGeometry x="38" y="550" width="380" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="33" y="767" width="584" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="nsg_apim_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Network_Security_Groups.svg;" parent="7" vertex="1">
+                    <mxGeometry width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="nsg_apim_lbl" value="nsg-apim: Allow HTTPS:443 (Internet), APIM Mgmt:3443, LB:6390 inbound; Allow Storage/SQL/KeyVault/AzureCloud outbound" style="text;html=1;align=left;verticalAlign=middle;fontSize=9;" parent="7" vertex="1">
+                    <mxGeometry x="44" y="8" width="540" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="33" y="723" width="584" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="nsg_jump_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Network_Security_Groups.svg;" parent="9" vertex="1">
+                    <mxGeometry width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="nsg_jump_lbl" value="nsg-jump: Inbound Allow RDP:3389 from VirtualNetwork (Bastion); Deny Internet" style="text;html=1;align=left;verticalAlign=middle;fontSize=9;" parent="9" vertex="1">
+                    <mxGeometry x="44" y="10" width="540" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="38" y="583" width="580" height="108" as="geometry"/>
+                </mxCell>
+                <mxCell id="dns_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/DNS_Zones.svg;" parent="10" vertex="1">
+                    <mxGeometry width="31.079136690647484" height="31.079136690647484" as="geometry"/>
+                </mxCell>
+                <mxCell id="dns_list" value="• privatelink.cognitiveservices.azure.com&#xa;• privatelink.openai.azure.com&#xa;• privatelink.services.ai.azure.com&#xa;• privatelink.search.windows.net&#xa;• privatelink.documents.azure.com&#xa;• privatelink.blob.core.windows.net&#xa;• privatelink.file.core.windows.net&#xa;• privatelink.azure-api.net" style="text;html=1;align=left;verticalAlign=top;fontSize=9;" parent="10" vertex="1">
+                    <mxGeometry x="50" width="530" height="105.66906474820145" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="34" y="243" width="125" height="286" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_st" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="11" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_st_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-st&lt;br&gt;(blob)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="11" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="group" parent="11" vertex="1" connectable="0">
+                    <mxGeometry x="471" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_st" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="14" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_st_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-stcore&lt;br&gt;(blob)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="14" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="group" parent="11" vertex="1" connectable="0">
+                    <mxGeometry x="472" y="93" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_cos" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="15" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_cos_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-cosmos-core&lt;br&gt;(SQL)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="15" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="" style="group" parent="11" vertex="1" connectable="0">
+                    <mxGeometry x="474" y="214" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_srch_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-srch-core&lt;br&gt;(searchService)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="16" vertex="1">
+                    <mxGeometry x="-3" y="18" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_srch" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="16" vertex="1">
+                    <mxGeometry x="13" y="-26" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="35" y="337" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_cos" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="12" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_cos_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-cosmos&lt;br&gt;(SQL)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="12" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="36" y="431" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_srch" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="13" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_srch_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-srch&lt;br&gt;(searchService)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="13" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="34" y="124" width="120" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="19" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_spoke_lbl" value="pe-aif-spoke&#xa;(account)" style="text;html=1;align=center;verticalAlign=top;fontSize=10;" parent="19" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="" style="group" parent="19" vertex="1" connectable="0">
+                    <mxGeometry x="44" y="1" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="17" vertex="1">
+                    <mxGeometry x="442" y="-1" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="507" y="645" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_research" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="18" vertex="1">
+                    <mxGeometry x="16" y="2" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_research_lbl" value="pe-aif-research&#xa;(account)" style="text;html=1;align=center;verticalAlign=top;fontSize=10;" parent="18" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_core_lbl" value="pe-aif-core&#xa;(account)" style="text;html=1;align=center;verticalAlign=top;fontSize=10;" parent="snet_pe" vertex="1">
+                    <mxGeometry x="506" y="165" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="" style="group" parent="snet_pe" vertex="1" connectable="0">
+                    <mxGeometry x="503" y="32" width="76" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_apim" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Private_Endpoint.svg;" parent="20" vertex="1">
+                    <mxGeometry x="16" width="44" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe_apim_lbl" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;pe-apim&lt;br&gt;(Gateway)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;fontSize=8;" parent="20" vertex="1">
+                    <mxGeometry y="44" width="76" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="nsg_section" value="Network Security Groups" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=1;" parent="snet_pe" vertex="1">
+                    <mxGeometry x="36" y="699" width="300" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="vnet_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/networking/Virtual_Networks.svg;" parent="vnet" vertex="1">
+                    <mxGeometry x="612" y="6" width="28" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_bastion_jump" value="RDP:3389" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#FF8000;strokeWidth=2;fontColor=#FF8000;fontSize=9;spacingLeft=-29;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="vnet" source="pip_bas" target="jumpvm" edge="1">
+                    <mxGeometry x="-0.2448" y="6" relative="1" as="geometry">
+                        <mxPoint x="241" y="122" as="sourcePoint"/>
+                        <mxPoint x="278" y="165" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="apim_zone" value="API Management  —  apim-contoso-{suffix}" style="swimlane;fontStyle=1;align=left;startSize=28;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=3;fontSize=12;spacingLeft=10;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-2006" y="-1606" width="659" height="310" as="geometry"/>
+                </mxCell>
+                <mxCell id="apim_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/app_services/API_Management_Services.svg;" parent="apim_zone" vertex="1">
+                    <mxGeometry x="18" y="44" width="64" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="apim_detail" value="SKU: StandardV2_1 | East US 2&#xa;Public Access: Disabled (via azapi PATCH)&#xa;Identity: System-assigned MI&#xa;MI Role: Cognitive Services User → core + research&#xa;VNet Integration: External (outbound via snet-apim → private endpoints)" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="apim_zone" vertex="1">
+                    <mxGeometry x="94" y="44" width="340" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="apim_api_box" value="API: /openai (HTTPS, subscription required, api-key header)&#xa;Operations:&#xa;  • POST /deployments/{id}/chat/completions → core backend&#xa;  • POST /deployments/o3-deep-research/... → research backend&#xa;  • POST /deployments/{id}/embeddings → core backend&#xa;  • POST /responses → core backend&#xa;Policy: rate-limit 100 calls/60s (API level)&#xa;Subscriptions: 1 per team (foundry-gateway-{team})" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fillColor=#ffffc0;strokeColor=#d6b656;rounded=0;" parent="apim_zone" vertex="1">
+                    <mxGeometry x="14" y="124" width="420" height="166" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_zone" value="Azure AI Foundry — Core  (Sweden Central)" style="swimlane;fontStyle=1;align=left;startSize=28;fillColor=#F8CECC;strokeColor=#B85450;strokeWidth=3;fontSize=12;spacingLeft=10;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-1177" y="-1083.5" width="670" height="355" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/ai_machine_learning/AI_Studio.svg;" parent="core_zone" vertex="1">
+                    <mxGeometry x="18" y="44" width="64" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_detail" value="aif-core-contoso-{suffix}&lt;br&gt;Kind: AIServices | SKU: S0&lt;br&gt;Public Access: Disabled | Local Auth: Disabled&lt;br&gt;Identity: System-assigned MI | Project Management: Enabled&lt;br&gt;Network ACLs: Deny (private) | VNet injection: snet-agents" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="core_zone" vertex="1">
+                    <mxGeometry x="94" y="44" width="560" height="82" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_models_box" value="Model Deployments (NoAutoUpgrade)&lt;br&gt;gpt-4.1-mini (OpenAI, v2025-04-14, GlobalStandard, 30K TPM)&lt;div&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;gpt-4.1-nano (OpenAI, v2025-04-14, GlobalStandard, 30K TPM)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;text-embedding-3-large (OpenAI, v1, Standard, 50K TPM)&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fillColor=#F8CECC;strokeColor=#B85450;rounded=0;" parent="core_zone" vertex="1">
+                    <mxGeometry x="18" y="140" width="300" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="admin_proj" value="Admin Project  —  project-admin-{suffix}" style="swimlane;fontStyle=1;align=left;startSize=24;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=10;spacingLeft=6;collapsible=0;" parent="core_zone" vertex="1">
+                    <mxGeometry x="334" y="140" width="320" height="192" as="geometry"/>
+                </mxCell>
+                <mxCell id="admin_proj_detail" value="Identity: System-assigned MI&#xa;Capability Host: caphost-admin (Kind: Agents)&#xa;&#xa;Connections (AAD auth):&#xa;• cosmos-admin → Core CosmosDB&#xa;• storage-admin → Core Storage&#xa;• search-admin → Core AI Search&#xa;&#xa;Roles on MI:&#xa;• Cosmos DB Operator + Data Contributor&#xa;• Storage Blob Data Owner (ABAC scoped)&#xa;• Search Index Data + Service Contributor" style="text;html=1;align=left;verticalAlign=top;fontSize=9;" parent="admin_proj" vertex="1">
+                    <mxGeometry x="8" y="30" width="300" height="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="deployer_note" value="Deployer MI: Cognitive Services User on core + research + spoke accounts" style="text;html=1;align=left;verticalAlign=middle;fontSize=9;fillColor=#F8CECC;strokeColor=#B85450;rounded=0;" parent="core_zone" vertex="1">
+                    <mxGeometry x="18" y="224" width="300" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="research_zone" value="Azure AI Foundry — Research  (Norway East)" style="swimlane;fontStyle=1;align=left;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=3;fontSize=12;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="-1177" y="115" width="503" height="178" as="geometry"/>
+                </mxCell>
+                <mxCell id="research_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/ai_machine_learning/AI_Studio.svg;" parent="research_zone" vertex="1">
+                    <mxGeometry x="18" y="44" width="64" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="research_detail" value="aif-research-contoso-{suffix}&lt;br&gt;Kind: AIServices | SKU: S0 | Location: Norway East&lt;br&gt;Public Access: Disabled | Local Auth: Disabled | Identity: System MI&lt;br&gt;Private Endpoint: pe-aif-research (DNS zones: cognitiveservices + openai + services.ai)" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="research_zone" vertex="1">
+                    <mxGeometry x="94" y="44" width="412" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="research_models_box" value="Model Deployments (NoAutoUpgrade):&lt;br&gt;o3-deep-research (OpenAI, v2025-06-26, GlobalStandard, 10K TPM)" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=0;" parent="research_zone" vertex="1">
+                    <mxGeometry x="18" y="126" width="319" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_zone" value="Azure AI Foundry — Spoke Multi  (Sweden Central)" style="swimlane;fontStyle=1;align=center;startSize=28;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=3;fontSize=12;spacingLeft=10;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-2610" y="-977.75" width="454" height="389.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/ai_machine_learning/AI_Studio.svg;" parent="spoke_zone" vertex="1">
+                    <mxGeometry x="18" y="44" width="64" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_detail" value="aif-spk-{customer}-{suffix}&lt;br&gt;Kind: AIServices | SKU: S0 | Sweden Central&lt;br&gt;Public Access: Disabled | Project Management: Enabled&lt;br&gt;No local model deployments — routes all inference via APIM&lt;br&gt;VNet injection: snet-agents-spoke" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="spoke_zone" vertex="1">
+                    <mxGeometry x="94" y="44" width="340" height="82" as="geometry"/>
+                </mxCell>
+                <mxCell id="tp_header" value="Team Projects  (1 per team)" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=1;" parent="spoke_zone" vertex="1">
+                    <mxGeometry x="18" y="116.75" width="420" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="tp_a" value="&lt;b&gt;project-{team-a}-{suffix}&lt;/b&gt;&lt;br&gt;Identity: System MI&lt;br&gt;APIM conn: core-{team-a}&lt;br&gt;  (ApiKey: subscription key)&lt;br&gt;CapHost: caphostproj-{team-a}&lt;br&gt;  (Kind: Agents)&lt;br&gt;Backing: Spoke Storage +&lt;br&gt;  Cosmos + Search (AAD)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;spacingLeft=6;" parent="spoke_zone" vertex="1">
+                    <mxGeometry x="21" y="139.75" width="200" height="106" as="geometry"/>
+                </mxCell>
+                <mxCell id="tp_b" value="&lt;b&gt;project-{team-b}-{suffix}&lt;/b&gt;&lt;br&gt;Identity: System MI&lt;br&gt;APIM conn: core-{team-b}&lt;br&gt;  (ApiKey: subscription key)&lt;br&gt;CapHost: caphostproj-{team-b}&lt;br&gt;  (Kind: Agents)&lt;br&gt;Backing: Spoke Storage +&lt;br&gt;  Cosmos + Search (AAD)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;spacingLeft=6;" parent="spoke_zone" vertex="1">
+                    <mxGeometry x="232" y="139.75" width="200" height="106" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_rbac" value="&lt;b&gt;Team Project MI Roles (per project, on spoke customer-managed dependencies)&lt;/b&gt;&lt;br&gt;• Cosmos DB Operator + Data Contributor (enterprise_memory DB)&lt;br&gt;• Storage Blob Data Owner (ABAC: scoped to {project-guid}-azureml-agent container)&lt;br&gt;• Search Index Data Contributor + Search Service Contributor" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;rounded=0;" parent="spoke_zone" vertex="1">
+                    <mxGeometry x="21" y="257.75" width="411" height="86" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_backing" value="Core Customer-Managed Dependencies (Private - Sweden Central)" style="swimlane;fontStyle=1;align=center;startSize=28;fillColor=#f8cecc;strokeColor=#B85450;strokeWidth=2;fontSize=11;spacingLeft=10;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-1180" y="-285" width="387" height="335" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_st_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/storage/Storage_Accounts.svg;" parent="core_backing" vertex="1">
+                    <mxGeometry x="82" y="49" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_st_lbl" value="&lt;b&gt;stcorecontoso{suffix}&lt;/b&gt;&lt;br&gt;StorageV2, Standard_ZRS&lt;br&gt;Public: Disabled&lt;br&gt;Shared Key: Disabled" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="core_backing" vertex="1">
+                    <mxGeometry x="208" y="48" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_cos_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/databases/Azure_Cosmos_DB.svg;" parent="core_backing" vertex="1">
+                    <mxGeometry x="82" y="143" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_cos_lbl" value="&lt;b&gt;cosmos-core-contoso-{suffix}&lt;/b&gt;&lt;br&gt;SQL API, Session consistency&lt;br&gt;DB: enterprise_memory&lt;br&gt;Public: Disabled, Local Auth: Disabled" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="core_backing" vertex="1">
+                    <mxGeometry x="208" y="144" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_srch_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/app_services/Search_Services.svg;" parent="core_backing" vertex="1">
+                    <mxGeometry x="82" y="238" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_srch_lbl" value="&lt;b&gt;srch-core-contoso-{suffix}&lt;/b&gt;&lt;br&gt;SKU: Standard&lt;br&gt;Public: Disabled&lt;br&gt;Used by: caphost-admin (vector store)" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="core_backing" vertex="1">
+                    <mxGeometry x="208" y="241" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="core_backing_note" value="Dedicated to Admin Project capability host only. Access via AAD (no local auth/shared key)." style="text;html=1;align=left;verticalAlign=middle;fontSize=9;fontStyle=2;" parent="core_backing" vertex="1">
+                    <mxGeometry x="11" y="305" width="634" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_backing" value="Spoke Customer-Managed Dependencies (Private — Sweden Central)" style="swimlane;fontStyle=1;align=center;startSize=28;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;spacingLeft=10;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="-2610" y="-285" width="386" height="383" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_st_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/storage/Storage_Accounts.svg;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="246" y="47" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_st_lbl" value="&lt;b&gt;stcontoso{suffix}&lt;/b&gt;&lt;br&gt;StorageV2, Standard_ZRS&lt;br&gt;Public: Disabled, Shared Key: Disabled&lt;br&gt;ABAC per team project container" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="29" y="45" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_cos_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/databases/Azure_Cosmos_DB.svg;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="246" y="141" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_cos_lbl" value="&lt;b&gt;cosmos-contoso-{suffix}&lt;/b&gt;&lt;br&gt;SQL API, Session consistency&lt;br&gt;DB: enterprise_memory&lt;br&gt;Public: Disabled, Local Auth: Disabled" style="text;html=1;align=left;verticalAlign=top;fontSize=10;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="29" y="141" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_srch_icon" value="" style="image;aspect=fixed;html=1;image=img/lib/azure2/app_services/Search_Services.svg;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="246" y="235" width="56" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_srch_lbl" value="srch-contoso-{suffix}&lt;br&gt;SKU: Standard&lt;br&gt;Public: Disabled&lt;br&gt;Used by: team caphosts (vector store)" style="text;html=1;align=left;verticalAlign=top;fontSize=9;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="32" y="235" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="spoke_backing_note" value="All team project Capability Hosts share these services. Isolation enforced via ABAC conditions on Storage (scoped to {project-guid}-azureml-agent container) and Cosmos DB-level RBAC (enterprise_memory database, per-project data contributor)." style="text;html=1;align=left;verticalAlign=middle;fontSize=9;fontStyle=2;whiteSpace=wrap;" parent="spoke_backing" vertex="1">
+                    <mxGeometry x="32" y="301" width="336" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="isolation" value="Further Information" style="swimlane;fontStyle=1;align=left;startSize=24;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="-2006" y="407" width="659" height="183" as="geometry"/>
+                </mxCell>
+                <mxCell id="iso_text" value="VNet: all PaaS services accessible only via Private Endpoints — no public internet route&lt;br&gt;Subnet: network segments with delegation rules; PE subnet has network_policies=Disabled&lt;br&gt;Private DNS Zones resolve PaaS FQDNs to private IPs (10.0.0.x NIC) instead of public Azure IPs&lt;br&gt;Bastion → Jump VM only route for human access; NAT GW provides outbound-only internet for Jump VM&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Resource Groups: rg-contoso-core-{suffix} (core) | rg-contoso-multi-{suffix} (spoke)&lt;/span&gt;&lt;br style=&quot;color: rgb(63, 63, 63); scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251);&quot;&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Suffix: 6-char hex (SHA-256 of subscription ID) | Tags: environment=dev, customer, workload=foundry, managed_by=terraform&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=top;fontSize=9;" parent="isolation" vertex="1">
+                    <mxGeometry x="8" y="28" width="1144" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_https" value="━━ HTTPS:443  API traffic (blue)" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#0000CC;" parent="isolation" vertex="1">
+                    <mxGeometry x="8" y="129" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_pe" value="╌ ╌ Private Endpoint / DNS resolution (purple)" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#9673a6;" parent="isolation" vertex="1">
+                    <mxGeometry x="180" y="129" width="250" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_agent" value="━━ Agent VNet injection flow (green)" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#82b366;" parent="isolation" vertex="1">
+                    <mxGeometry x="429" y="129" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_clients_apim" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;HTTPS:443&lt;br&gt;api-key auth&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0000CC;strokeWidth=2;fontColor=#0000CC;fontSize=10;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" target="apim_zone" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-1676" y="-1703" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="-1676" y="-1703"/>
+                            <mxPoint x="-1676" y="-1690"/>
+                            <mxPoint x="-1676" y="-1690"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_apim_core" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Backend: openai&lt;br&gt;via snet-apim → pe-aif-core&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0000CC;strokeWidth=2;fontColor=#0000CC;fontSize=9;exitX=1;exitY=0.3;exitDx=0;exitDy=0;" parent="1" source="apim_zone" target="core_zone" edge="1">
+                    <mxGeometry x="-0.3151" y="-32" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_apim_research" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Backend: openai-research&lt;br&gt;o3-deep-research only&lt;br&gt;via snet-apim → pe-aif-research&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0000CC;strokeWidth=2;fontColor=#0000CC;fontSize=10;exitX=1;exitY=0.7;exitDx=0;exitDy=0;" parent="1" source="apim_zone" target="research_detail" edge="1">
+                    <mxGeometry x="0.2" y="14" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="-423" y="-1389"/>
+                            <mxPoint x="-423" y="202"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_research" value="&lt;font style=&quot;font-size: 16px; color: rgb(150, 115, 166);&quot;&gt;privatelink&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontColor=#9673a6;fontSize=8;exitX=0.987;exitY=0.674;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="pe_research" target="research_zone" edge="1">
+                    <mxGeometry x="0.3037" y="-18" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                        <mxPoint x="-1424.9999999999995" y="76" as="sourcePoint"/>
+                        <mxPoint x="-1245" y="227" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_spoke" value="privatelink" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontColor=#9673a6;fontSize=16;exitX=0.013;exitY=0.657;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="pe_spoke" edge="1">
+                    <mxGeometry x="-0.2956" y="15" relative="1" as="geometry">
+                        <mxPoint x="-1937" y="-487" as="sourcePoint"/>
+                        <mxPoint x="-2178" y="-584" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_apim" value="&lt;font style=&quot;font-size: 16px; color: rgb(150, 115, 166);&quot;&gt;privatelink&lt;br&gt;.azure-api.net&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontColor=#9673a6;fontSize=8;exitX=1;exitY=0.75;exitDx=0;exitDy=0;" parent="1" source="pe_apim" target="apim_zone" edge="1">
+                    <mxGeometry x="0.142" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="-1256" y="-407"/>
+                            <mxPoint x="-1256" y="-1452"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_core_st" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;" parent="1" source="pe_core_st" target="core_st_icon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="97" value="privatelink" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#9673A6;fontSize=16;" parent="e_pe_core_st" vertex="1" connectable="0">
+                    <mxGeometry x="-0.0172" y="-1" relative="1" as="geometry">
+                        <mxPoint y="12" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_core_cos" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;" parent="1" source="pe_core_cos" target="core_cos_icon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="98" value="privatelink" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=16;fontColor=#9673A6;" parent="e_pe_core_cos" vertex="1" connectable="0">
+                    <mxGeometry x="0.0025" y="-1" relative="1" as="geometry">
+                        <mxPoint y="11" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_core_srch" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;" parent="1" source="pe_core_srch" target="core_srch_icon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="99" value="privatelink" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=16;fontColor=#9673A6;" parent="e_pe_core_srch" vertex="1" connectable="0">
+                    <mxGeometry x="0.0025" y="-2" relative="1" as="geometry">
+                        <mxPoint y="12" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_spoke_st" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontSize=14;" parent="1" source="pe_spoke_st" target="spoke_st_icon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="94" value="privatelink" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=16;fontColor=light-dark(#9673A6,#EDEDED);" parent="e_pe_spoke_st" vertex="1" connectable="0">
+                    <mxGeometry x="-0.0629" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-4" y="14" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_spoke_cos" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;" parent="1" source="pe_spoke_cos" target="spoke_cos_icon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="95" value="privatelink" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=16;fontColor=light-dark(#9673A6,#EDEDED);" parent="e_pe_spoke_cos" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1749" y="-2" relative="1" as="geometry">
+                        <mxPoint x="-22" y="15" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_pe_spoke_srch" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;" parent="1" source="pe_spoke_srch" target="spoke_srch_icon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="96" value="privatelink" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=16;fontColor=#9673A6;" parent="e_pe_spoke_srch" vertex="1" connectable="0">
+                    <mxGeometry x="-0.0362" y="2" relative="1" as="geometry">
+                        <mxPoint y="11" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_agents_core" value="&lt;font style=&quot;font-size: 16px; color: rgb(130, 179, 102);&quot;&gt;VNet injection&lt;br&gt;agent traffic&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;strokeWidth=2;fontColor=#82b366;fontSize=8;" parent="1" source="snet_agents" target="core_zone" edge="1">
+                    <mxGeometry x="0.1585" y="-23" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_agents_spoke" value="VNet injection&#xa;agent traffic" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;strokeWidth=2;fontColor=#82B366;fontSize=16;" parent="1" source="snet_agents_spoke" target="spoke_zone" edge="1">
+                    <mxGeometry x="0.0833" y="32" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_spoke_apim" value="core-{team} connection&#xa;APIM subscription key" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;strokeWidth=2;fontColor=#82b366;fontSize=16;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="spoke_zone" target="apim_zone" edge="1">
+                    <mxGeometry x="0.5554" y="35" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_admin_backing" value="AAD auth&#xa;capability host" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;strokeWidth=2;dashed=1;fontColor=#b85450;fontSize=16;" parent="1" target="core_backing" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-986" y="-729" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_teams_backing" value="AAD auth via capability hosts" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;strokeWidth=2;dashed=1;fontColor=#82b366;fontSize=16;" parent="1" target="spoke_backing" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-2417" y="-586" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="-2417" y="-586"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="93" value="Spoke account is purely a multi-tenant container for team projects, with models accessed via APIM connection to either the core or research account.&amp;nbsp;" style="text;html=1;align=left;verticalAlign=top;fontSize=10;whiteSpace=wrap;" parent="1" vertex="1">
+                    <mxGeometry x="-2610" y="-1042" width="206" height="39" as="geometry"/>
+                </mxCell>
+                <mxCell id="101" value="&lt;font style=&quot;color: rgb(150, 115, 166);&quot;&gt;privatelink&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;color: rgb(150, 115, 166);&quot;&gt;(3 DNS zones)&lt;/font&gt;&lt;/div&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontColor=#9673a6;fontSize=16;exitX=1.03;exitY=0.629;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="pe_core" edge="1">
+                    <mxGeometry x="-0.5499" y="-34" relative="1" as="geometry">
+                        <mxPoint x="-1927" y="-434" as="sourcePoint"/>
+                        <mxPoint x="-1143" y="-729" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

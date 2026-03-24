@@ -1,0 +1,14 @@
+# Release update as of 17/03/2026
+- **Microsoft Foundry NextGen portal (GA):** Unified UI to build, optimize, and govern AI apps and agents with RBAC, VNet support, and centralized governance.
+
+**Observability Evaluations & Monitoring (GA):** Built-in and custom evaluators plus continuous evaluation and alerting for quality, groundedness, safety, and performance.
+
+**NextGen UI support for Responses API Agents (Agents v2) with end-to-end networking:** We now support customers enabling end-to-end network isolation in Foundry NextGen UI (new portal UI) with Responses API Agents or the new Agent v2. When you create agents through the NextGen portal, SDK, or CLI with public network access (PNA) disabled or selected networks AND have your Agent Service client injected into your custom virtual network subnet, you can build your agents, run evaluations, and ensure end-to-end network security. This allows secured inbound and outbound communication to and from your Foundry resource while keeping all traffic within your network boundaries.
+
+**Private MCP Tool Support:** MCP (Model Context Protocol) tools now support private networking when Foundry is network isolated. You can deploy your MCP tool on your VNET subnet and the tool can access private data sources and Azure services through your VNET subnet, ensuring sensitive tool calls remain within your network boundary. This enables enterprises to build production agents that leverage internal APIs, databases, and services without exposing them to public endpoints.
+
+**Azure portal creation of Foundry with BYO VNET:** You can now create a fully network-isolated Foundry resource directly in the Azure Portal with your own Storage account, AI Search resource, Azure CosmosDB, and Virtual Network. Previously, this configuration required Bicep or Terraform templates. The Azure Portal experience now guides you through selecting or creating the required dependent resources and configuring virtual network injection during resource creation, streamlining the setup process for Standard Agent deployments with end-to-end network isolation.
+
+**Voice Live integration with Agent Service (PuPr):** Production ready, real-time speech-to-speech agents with Foundry security and observability. See this demo in action!
+
+**Foundry Agent Service (GA):** Redesigned API built on OpenAI’s Responses API with wire compatibility. This experience serves as the long-term foundation for Foundry Agent Service and supports a complete, production ready developer workflow across both REST APIs and SDKs. Existing Responses based agents can run on Foundry with minimal code changes. Prompt agents are GA; hosted and workflow agents remain in public preview. Python and JavaScript SDKs are available now, and .NET and Java SDKs are coming 3/27.

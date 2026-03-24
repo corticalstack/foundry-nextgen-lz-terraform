@@ -1,0 +1,31 @@
+# Environment files — may contain secrets
+.env
+
+# Terraform — local overrides, sensitive variable files, state, and downloaded providers
+*.auto.tfvars
+*.tfvars.local
+*.tfstate.*.backup
+terraform.tfvars
+*.tfstate
+.terraform/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
