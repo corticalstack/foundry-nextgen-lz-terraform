@@ -1,4 +1,4 @@
-# Foundry Hub-and-Spoke — Terraform
+# Foundry NextGen LZ Private Network Isolation with Terraform
 
 Provisions the complete hub-and-spoke AI infrastructure for Azure AI Foundry using Terraform. A single `terraform apply` creates two resource groups, two Foundry accounts with model deployments, an APIM gateway with routing policies and team subscriptions, a shared multi-project spoke account, one project per team, and all APIM connections and RBAC assignments.
 
