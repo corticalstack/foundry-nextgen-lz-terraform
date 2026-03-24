@@ -1,0 +1,18 @@
+# chat_oss_policy.xml.tftpl — stub for forward compatibility (aif-oss / Phi-4 out of scope).
+# When the OSS hub is added, create the chat-oss operation and backend, then
+# reference this template the same way chat_research_policy.xml.tftpl is used.
+#
+# Template variables: backend_id (e.g. "openai-oss")
+#
+# <policies>
+#   <inbound>
+#     <base />
+#     <set-backend-service backend-id="${backend_id}" />
+#     <authentication-managed-identity resource="https://cognitiveservices.azure.com" output-token-variable-name="msi-access-token" ignore-error="false" />
+#     <set-header name="Authorization" exists-action="override">
+#       <value>@("Bearer " + (string)context.Variables["msi-access-token"])</value>
+#     </set-header>
+#   </inbound>
+#   <backend><base /></backend>
+#   <outbound><base /></outbound>
+# </policies>
