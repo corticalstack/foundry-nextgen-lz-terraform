@@ -125,9 +125,27 @@ resource "azapi_resource" "agent_storage" {
       publicNetworkAccess     = "Disabled"
       allowBlobPublicAccess   = false
       minimumTlsVersion       = "TLS1_2"
+      # networkAcls.resourceAccessRules — trusted-service bypass for the spoke
+      # account and every per-team project. Needed in addition to the private
+      # endpoint: the agent runtime's data-plane reads can come via the PE from
+      # snet-agents-spoke, but Foundry's control-plane services (Files API,
+      # agent orchestrator) run in Microsoft-managed network and reach this
+      # storage account from MS-owned IPs. With publicNetworkAccess = "Disabled"
+      # those calls would be rejected unless the calling resource's ARM ID is
+      # explicitly trusted here. See 99-docs/storage-trusted-bypass-rationale.md.
       networkAcls = {
         defaultAction = "Deny"
         bypass        = "AzureServices"
+        resourceAccessRules = concat(
+          [{
+            resourceId = azapi_resource.spoke_account.id
+            tenantId   = data.azurerm_client_config.current.tenant_id
+          }],
+          [for k in var.teams : {
+            resourceId = azapi_resource.team_project[k].id
+            tenantId   = data.azurerm_client_config.current.tenant_id
+          }],
+        )
       }
     }
   }
