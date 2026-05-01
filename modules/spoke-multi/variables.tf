@@ -108,3 +108,8 @@ variable "dns_zone_ids" {
   default     = null
   description = "Private DNS zone resource IDs created at the environment root. Required when enable_private_networking = true."
 }
+
+variable "log_analytics_workspace_id" {
+  type        = string
+  description = "Resource ID of the Log Analytics workspace to send spoke account and agent storage diagnostics to. Typically wired from module.core.log_analytics_workspace_id so all LZ telemetry lands in a single workspace."
+}
