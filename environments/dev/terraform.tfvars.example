@@ -13,3 +13,18 @@ hub_models = [
 research_models = [
   { name = "o3-deep-research", format = "OpenAI", version = "2025-06-26", sku = "GlobalStandard", capacity = 10 },
 ]
+
+# Operator RBAC at the admin project scope.
+# Required for portal users to invoke agents — see 99-docs/core-account-admin-project-setup.md §12.
+# Empty list (default) means no Terraform-managed operator RBAC.
+# project_admin_principals = [
+#   { object_id = "00000000-0000-0000-0000-000000000000", principal_type = "User" },
+# ]
+
+# Per-team operator RBAC at each spoke project scope.
+# Keys must match var.teams entries.
+# team_admin_principals = {
+#   beta  = [{ object_id = "00000000-0000-0000-0000-000000000000", principal_type = "User" }]
+#   delta = [{ object_id = "00000000-0000-0000-0000-000000000000", principal_type = "User" }]
+#   gamma = [{ object_id = "00000000-0000-0000-0000-000000000000", principal_type = "User" }]
+# }

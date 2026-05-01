@@ -25,6 +25,7 @@ This guide walks through verifying that the private networking deployment (GH-2)
 6. [Known Issues](#6-known-issues)
    - [6.1 Agents page blocked in Microsoft Edge](#61-agents-page-blocked-in-microsoft-edge)
    - [6.2 Agents page returns 403 Forbidden on first load](#62-agents-page-returns-403-forbidden-on-first-load)
+   - [6.5 Agent invocation returns generic error; logs show 403 on Agents_Wildcard_Get](#65-agent-invocation-returns-generic-error-diagnostic-logs-show-403-on-agents_wildcard_get)
 7. [Jump VM Hygiene](#7-jump-vm-hygiene)
 8. [Set Up VS Code Remote Tunnel (for Notebook Development)](#8-set-up-vs-code-remote-tunnel-for-notebook-development)
    - [8.1 Install developer tools on the jump VM](#81-install-developer-tools-on-the-jump-vm)
@@ -483,6 +484,34 @@ az cosmosdb sql role assignment list \
 ```
 
 **Expected:** The scope column shows `.../dbs/enterprise_memory` (not `.../colls/...`).
+
+### 6.5 Agent invocation returns generic error; diagnostic logs show 403 on `Agents_Wildcard_Get`
+
+**Symptom:** Opening an agent in the Build pane / playground works, but submitting any prompt returns a generic *"The server had an error processing your request"* error. The Foundry account's Log Analytics workspace shows entries like:
+
+```
+OperationName  : Agents_Wildcard_Get   (or Projects_Wildcard_Get)
+ResultSignature: 403
+DurationMs     : ~50
+apiName        : Azure AI Projects API
+objectId       : <your user object id>
+```
+
+**Cause:** Subscription-level `Azure AI User` does not satisfy nextgen Foundry's project-scoped data-plane authorisation. The portal user needs a role assignment at the **project resource** scope.
+
+**Resolution:** Add the user (or a security group containing them) to `var.project_admin_principals` (admin project) or `var.team_admin_principals` (team projects), then `terraform apply`. See [`core-account-admin-project-setup.md` §12 — Operator (User) RBAC](./core-account-admin-project-setup.md#12-operator-user-rbac) for the full rationale, variable schema, and migration from imperative assignments.
+
+For an immediate one-off fix without re-applying:
+
+```bash
+az role assignment create \
+  --assignee-object-id <user-or-group-object-id> \
+  --assignee-principal-type User \
+  --role "Azure AI Project Manager" \
+  --scope "/subscriptions/.../accounts/aif-core-<customer>-<suffix>/projects/project-admin-<suffix>"
+```
+
+But back-port to Terraform afterwards to avoid drift.
 
 ---
 

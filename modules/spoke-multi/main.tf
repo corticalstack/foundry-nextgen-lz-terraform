@@ -413,6 +413,39 @@ resource "azurerm_role_assignment" "spoke_account_storage_blob_contributor" {
   depends_on = [time_sleep.wait_spoke_account[0]]
 }
 
+# ---------------------------------------------------------------------------
+# Operator RBAC — per-team 'Azure AI Project Manager' assignments.
+# Required for portal users to invoke agents in each team's Build pane /
+# playground. Subscription-level 'Azure AI User' does NOT satisfy nextgen
+# Foundry's project-scoped data-plane auth; without these entries, those
+# users see HTTP 403 on Agents_Wildcard_Get and the agent UI returns a
+# generic error. See 99-docs/core-account-admin-project-setup.md §12.
+# ---------------------------------------------------------------------------
+
+locals {
+  team_admin_assignments = flatten([
+    for team, principals in var.team_admin_principals : [
+      for p in principals : {
+        team           = team
+        object_id      = p.object_id
+        principal_type = p.principal_type
+        key            = "${team}-${p.object_id}"
+      }
+    ]
+  ])
+}
+
+resource "azurerm_role_assignment" "team_project_manager" {
+  for_each = {
+    for a in local.team_admin_assignments : a.key => a
+  }
+
+  scope                = azapi_resource.team_project[each.value.team].id
+  role_definition_name = "Azure AI Project Manager"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
+}
+
 resource "azurerm_role_assignment" "search_index_contributor" {
   for_each = var.enable_private_networking ? toset(var.teams) : toset([])
 

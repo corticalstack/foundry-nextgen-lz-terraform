@@ -70,6 +70,28 @@ variable "deployer_principal_id" {
   description = "Object ID of the identity running terraform apply. Sourced from data.azurerm_client_config.current.object_id at the environment root."
 }
 
+variable "project_admin_principals" {
+  type = list(object({
+    object_id      = string
+    principal_type = optional(string, "User")
+  }))
+  default     = []
+  description = <<-EOT
+    Principals to grant 'Azure AI Project Manager' at the admin project resource scope.
+    Required for portal users to invoke agents in the Build pane / playground —
+    subscription-level 'Azure AI User' does NOT satisfy nextgen Foundry's project-scoped
+    data-plane auth, so without an entry here those users see HTTP 403 on
+    Agents_Wildcard_Get and the agent UI returns a generic error.
+
+    Each entry:
+      object_id      — Entra ID object ID of a user, group, or service principal.
+      principal_type — One of 'User', 'Group', 'ServicePrincipal'. Defaults to 'User'.
+
+    See 99-docs/core-account-admin-project-setup.md §12 for rationale and the
+    diagnostic-log signature this RBAC clears.
+  EOT
+}
+
 variable "core_models" {
   type = list(object({
     name     = string

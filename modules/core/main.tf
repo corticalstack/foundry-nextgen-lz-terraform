@@ -354,6 +354,22 @@ resource "azurerm_role_assignment" "deployer_research" {
   principal_id         = var.deployer_principal_id
 }
 
+# Operator RBAC at the admin project scope — required for portal users to
+# invoke agents. Subscription-level 'Azure AI User' does NOT satisfy
+# nextgen Foundry's project-scoped data-plane auth; without these entries,
+# the Agents_Wildcard_Get API returns 403 to the user's portal session.
+# See 99-docs/core-account-admin-project-setup.md §12.
+resource "azurerm_role_assignment" "admin_project_manager" {
+  for_each = var.enable_private_networking ? {
+    for p in var.project_admin_principals : p.object_id => p
+  } : {}
+
+  scope                = azapi_resource.admin_project[0].id
+  role_definition_name = "Azure AI Project Manager"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
+}
+
 # =============================================================================
 # PRIVATE NETWORKING — conditional on var.enable_private_networking
 # =============================================================================
