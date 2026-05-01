@@ -192,6 +192,7 @@ All three are gated on `enable_private_networking = true` and each gets its own 
 - Shared key access disabled; AAD-only
 - Public access disabled
 - Naming: `stcore{customer_no_hyphens}{suffix}` (max 24 chars, no hyphens)
+- `networkAcls.resourceAccessRules` lists the Foundry account and admin project ARM IDs as trusted services. This is required *in addition* to the private endpoint because parts of the Foundry agent runtime (Files API, agent orchestrator) call into this storage account from Microsoft-managed network — the PE only handles traffic that originates inside `snet-agents`. See [`storage-trusted-bypass-rationale.md`](./storage-trusted-bypass-rationale.md) for the full explanation, the customer-VNet-vs-MS-network diagram, and the security-narrowness analysis.
 
 #### CosmosDB Account
 **File:** [`modules/core/main.tf#L677`](../modules/core/main.tf#L677)
@@ -268,6 +269,38 @@ These connection names are referenced directly in the capability host definition
 
 ### 9. Capability Host
 
+There are **two** capability host resources in this LZ, with different responsibilities. Confusing them is a common cause of trouble — in particular, attempting to put `customerSubnet` on the project-level caphost will fail with `"CapabilityHost for Project cannot be created with Subnet, please retry without subnet"`. The split is:
+
+| Caphost | Resource type | Owns | Created by |
+|---|---|---|---|
+| **Account-level** — name pattern `<account-name>@aml_aiagentservice` | `Microsoft.CognitiveServices/accounts/capabilityHosts` | `customerSubnet` (VNet injection of the agent runtime) | Auto-provisioned by Azure when the account body sets `networkInjections` |
+| **Project-level** — `caphost-admin` | `Microsoft.CognitiveServices/accounts/projects/capabilityHosts` | `vectorStoreConnections`, `storageConnections`, `threadStorageConnections` (data-plane wiring) | Explicitly declared in this Terraform |
+
+#### 9a. Account-level capability host (auto-provisioned)
+
+**Trigger:** [`modules/core/main.tf#L41`](../modules/core/main.tf#L41) — the `networkInjections` block on `azapi_resource.core_account`:
+
+```hcl
+networkInjections = [{
+  scenario                   = "agent"
+  subnetArmId                = var.private_networking.agent_subnet_id
+  useMicrosoftManagedNetwork = false
+}]
+```
+
+Setting `networkInjections` on the Foundry account causes Azure to create a child capability host called `<account-name>@aml_aiagentservice`. That child caphost is what holds `customerSubnet`, and it is what causes the agent runtime (the Container Apps environment that hosts your code interpreter sandboxes etc.) to be VNet-injected into `snet-agents`. The visible side effect is a service association link named `legionservicelink` of type `Microsoft.App/environments` appearing on the subnet.
+
+You will not see this resource in the Terraform state because it is created and managed by Azure. To inspect it directly:
+
+```bash
+az rest --method GET --url \
+  "https://management.azure.com/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<account>/capabilityHosts?api-version=2025-04-01-preview"
+```
+
+Expect to see one entry with `customerSubnet` set to the `snet-agents` resource ID and `provisioningState = Succeeded`.
+
+#### 9b. Project-level capability host (declared in Terraform)
+
 **File:** [`modules/core/main.tf#L961`](../modules/core/main.tf#L961)
 
 ```hcl
@@ -286,7 +319,9 @@ resource "azapi_resource" "admin_capability_host" {
 }
 ```
 
-The capability host is what enables the **Agent Service** and the **Foundry playground** for this project. It wires the three backing resource connections into the project so the runtime can persist threads (CosmosDB), files (Storage), and embeddings (AI Search).
+The project caphost wires the three named connections (set up in §8) into the project so the runtime can persist threads (CosmosDB), files (Storage), and embeddings (AI Search). It must **not** carry `customerSubnet` — that property belongs on the account-level caphost only.
+
+The project caphost is what enables the **Agent Service** and the **Foundry playground** for this project. Without it, agents cannot be created or invoked, even if the account-level caphost is healthy.
 
 ---
 
