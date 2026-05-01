@@ -37,3 +37,13 @@ output "jump_vm_resource_id" {
   description = "Azure resource ID of the jump VM — use for portal navigation and Bastion connect (only set when enable_private_networking = true)."
   value       = var.enable_private_networking ? azurerm_windows_virtual_machine.jump_vm[0].id : null
 }
+
+output "log_analytics_workspace_id" {
+  description = "Resource ID of the shared Log Analytics workspace receiving Foundry account and storage diagnostics."
+  value       = module.core.log_analytics_workspace_id
+}
+
+output "log_analytics_workspace_name" {
+  description = "Name of the shared Log Analytics workspace (handy for portal navigation)."
+  value       = module.core.log_analytics_workspace_name
+}

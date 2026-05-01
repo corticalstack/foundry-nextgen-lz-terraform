@@ -354,6 +354,22 @@ resource "azurerm_role_assignment" "deployer_research" {
   principal_id         = var.deployer_principal_id
 }
 
+# Operator RBAC at the admin project scope — required for portal users to
+# invoke agents. Subscription-level 'Azure AI User' does NOT satisfy
+# nextgen Foundry's project-scoped data-plane auth; without these entries,
+# the Agents_Wildcard_Get API returns 403 to the user's portal session.
+# See 99-docs/core-account-admin-project-setup.md §12.
+resource "azurerm_role_assignment" "admin_project_manager" {
+  for_each = var.enable_private_networking ? {
+    for p in var.project_admin_principals : p.object_id => p
+  } : {}
+
+  scope                = azapi_resource.admin_project[0].id
+  role_definition_name = "Azure AI Project Manager"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
+}
+
 # =============================================================================
 # PRIVATE NETWORKING — conditional on var.enable_private_networking
 # =============================================================================
@@ -634,9 +650,27 @@ resource "azapi_resource" "core_storage" {
       publicNetworkAccess   = "Disabled"
       allowBlobPublicAccess = false
       minimumTlsVersion     = "TLS1_2"
+      # networkAcls.resourceAccessRules — trusted-service bypass for the Foundry
+      # account and admin project. Needed in addition to the private endpoint:
+      # the agent runtime's data-plane reads can come via the PE from snet-agents,
+      # but Foundry's control-plane services (Files API, agent orchestrator)
+      # run in Microsoft-managed network and reach the storage account from
+      # MS-owned IPs. With publicNetworkAccess = "Disabled" those calls would be
+      # rejected unless the calling resource's ARM ID is explicitly trusted here.
+      # See 99-docs/storage-trusted-bypass-rationale.md.
       networkAcls = {
         defaultAction = "Deny"
         bypass        = "AzureServices"
+        resourceAccessRules = [
+          {
+            resourceId = azapi_resource.core_account.id
+            tenantId   = data.azurerm_client_config.current.tenant_id
+          },
+          {
+            resourceId = azapi_resource.admin_project[0].id
+            tenantId   = data.azurerm_client_config.current.tenant_id
+          },
+        ]
       }
     }
   }
@@ -838,6 +872,21 @@ resource "azurerm_role_assignment" "admin_storage_blob_contributor" {
   depends_on = [time_sleep.wait_admin_project_identity]
 }
 
+# Foundry account MSI also needs data-plane access on core_storage.
+# The agent service uses this identity for control-plane operations
+# (Files API uploads, blob lifecycle on user-attached files, intermediate
+# artifacts). Network-allow alone is insufficient — RBAC is evaluated
+# after networkAcls passes. See 99-docs/storage-trusted-bypass-rationale.md.
+resource "azurerm_role_assignment" "core_account_storage_blob_contributor" {
+  count = var.enable_private_networking ? 1 : 0
+
+  scope                = azapi_resource.core_storage[0].id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azapi_resource.core_account.identity[0].principal_id
+
+  depends_on = [time_sleep.wait_core_account[0]]
+}
+
 resource "azurerm_role_assignment" "admin_search_index_contributor" {
   count = var.enable_private_networking ? 1 : 0
 
@@ -869,6 +918,7 @@ resource "time_sleep" "wait_admin_rbac" {
   depends_on = [
     azurerm_role_assignment.admin_cosmos_operator,
     azurerm_role_assignment.admin_storage_blob_contributor,
+    azurerm_role_assignment.core_account_storage_blob_contributor,
     azurerm_role_assignment.admin_search_index_contributor,
     azurerm_role_assignment.admin_search_service_contributor,
   ]

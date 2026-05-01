@@ -23,8 +23,11 @@ This guide walks through verifying that the private networking deployment (GH-2)
    - [5.4 Agent Playground: create and run an agent](#54-agent-playground-create-and-run-an-agent)
    - [5.5 APIM gateway responds](#55-apim-gateway-responds)
 6. [Known Issues](#6-known-issues)
-   - [6.1 Agents page blocked in Microsoft Edge](#61-agents-page-blocked-in-microsoft-edge)
-   - [6.2 Agents page returns 403 Forbidden on first load](#62-agents-page-returns-403-forbidden-on-first-load)
+   - [6.1 APIM subscription keys rejected with 401 / backend returns 403](#61-apim-subscription-keys-rejected-with-401--backend-returns-403)
+   - [6.3 Agents page blocked in Microsoft Edge](#63-agents-page-blocked-in-microsoft-edge)
+   - [6.4 Agents page returns 403 Forbidden on first load](#64-agents-page-returns-403-forbidden-on-first-load)
+   - [6.5 Agent invocation returns generic error; logs show 403 on Agents_Wildcard_Get](#65-agent-invocation-returns-generic-error-diagnostic-logs-show-403-on-agents_wildcard_get)
+   - [6.6 Code Interpreter file attachment fails with HTTP 500](#66-code-interpreter-file-attachment-fails-with-http-500-empty-body-when-foundry-account-has-publicnetworkaccess--disabled)
 7. [Jump VM Hygiene](#7-jump-vm-hygiene)
 8. [Set Up VS Code Remote Tunnel (for Notebook Development)](#8-set-up-vs-code-remote-tunnel-for-notebook-development)
    - [8.1 Install developer tools on the jump VM](#81-install-developer-tools-on-the-jump-vm)
@@ -483,6 +486,72 @@ az cosmosdb sql role assignment list \
 ```
 
 **Expected:** The scope column shows `.../dbs/enterprise_memory` (not `.../colls/...`).
+
+### 6.5 Agent invocation returns generic error; diagnostic logs show 403 on `Agents_Wildcard_Get`
+
+**Symptom:** Opening an agent in the Build pane / playground works, but submitting any prompt returns a generic *"The server had an error processing your request"* error. The Foundry account's Log Analytics workspace shows entries like:
+
+```
+OperationName  : Agents_Wildcard_Get   (or Projects_Wildcard_Get)
+ResultSignature: 403
+DurationMs     : ~50
+apiName        : Azure AI Projects API
+objectId       : <your user object id>
+```
+
+**Cause:** Subscription-level `Azure AI User` does not satisfy nextgen Foundry's project-scoped data-plane authorisation. The portal user needs a role assignment at the **project resource** scope.
+
+**Resolution:** Add the user (or a security group containing them) to `var.project_admin_principals` (admin project) or `var.team_admin_principals` (team projects), then `terraform apply`. See [`core-account-admin-project-setup.md` §12 — Operator (User) RBAC](./core-account-admin-project-setup.md#12-operator-user-rbac) for the full rationale, variable schema, and migration from imperative assignments.
+
+For an immediate one-off fix without re-applying:
+
+```bash
+az role assignment create \
+  --assignee-object-id <user-or-group-object-id> \
+  --assignee-principal-type User \
+  --role "Azure AI Project Manager" \
+  --scope "/subscriptions/.../accounts/aif-core-<customer>-<suffix>/projects/project-admin-<suffix>"
+```
+
+But back-port to Terraform afterwards to avoid drift.
+
+### 6.6 Code Interpreter file attachment fails with HTTP 500 (empty body) when Foundry account has `publicNetworkAccess = Disabled`
+
+**Symptom:** An agent works correctly in the Build pane until you attach a file to its **Code Interpreter** tool. Submitting a prompt that exercises the file then returns a generic *"The server had an error processing your request"* error in the UI. The server-side correlation IDs in the Foundry diagnostic logs show fast (~1s) `create_response → 500` events with empty response bodies and an unset `objectId` (i.e. the runtime calling itself, not a user). Crucially, **the storage account's `Transactions` metric shows zero traffic during the failure window** — the runtime fails before it even reaches storage.
+
+**Cause:** Two cumulative gaps that only manifest when `publicNetworkAccess = Disabled` on the Foundry account *and* the BYO storage account:
+
+1. The storage account's `networkAcls.resourceAccessRules` does not list the Foundry account / project ARM IDs, so service-to-service calls from the Foundry control plane (Microsoft-managed network → your storage) are blocked at the firewall before RBAC is even evaluated.
+2. The Foundry account's system-assigned MI does not have `Storage Blob Data Contributor` on the BYO storage account — so even with the network path open, data-plane reads/writes would still be rejected.
+
+The agent invocation succeeds without a file because that path doesn't traverse the storage data plane at all.
+
+**Resolution:** Both fixes are now in the Terraform:
+
+- `modules/core/main.tf` — `azapi_resource.core_storage.networkAcls.resourceAccessRules` includes the Foundry account and admin project ARM IDs.
+- `modules/core/main.tf` — `azurerm_role_assignment.core_account_storage_blob_contributor` grants the core account MSI `Storage Blob Data Contributor` on `core_storage`.
+- Mirrored in `modules/spoke-multi/main.tf` for the spoke account and per-team projects.
+
+If you encounter this on a deployment that hasn't been re-applied since these changes were added, run `terraform apply` and the gaps will be filled. For full background — including why a private endpoint alone is insufficient, what traffic the trusted-bypass enables, and the security-narrowness analysis — see [`storage-trusted-bypass-rationale.md`](./storage-trusted-bypass-rationale.md).
+
+For a one-off triage fix (don't leave imperative state long-term):
+
+```bash
+# Trusted-bypass for Foundry account
+az storage account network-rule add \
+  -g <rg> --account-name <storage-name> \
+  --resource-id <foundry-account-arm-id> \
+  --tenant-id <tenant-id>
+
+# RBAC for Foundry account MSI
+FOUNDRY_MSI=$(az cognitiveservices account show -g <rg> -n <foundry-name> --query identity.principalId -o tsv)
+az role assignment create \
+  --assignee-object-id $FOUNDRY_MSI --assignee-principal-type ServicePrincipal \
+  --role "Storage Blob Data Contributor" \
+  --scope <storage-account-arm-id>
+```
+
+Then back-port to Terraform.
 
 ---
 

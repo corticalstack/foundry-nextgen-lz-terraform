@@ -125,9 +125,27 @@ resource "azapi_resource" "agent_storage" {
       publicNetworkAccess     = "Disabled"
       allowBlobPublicAccess   = false
       minimumTlsVersion       = "TLS1_2"
+      # networkAcls.resourceAccessRules — trusted-service bypass for the spoke
+      # account and every per-team project. Needed in addition to the private
+      # endpoint: the agent runtime's data-plane reads can come via the PE from
+      # snet-agents-spoke, but Foundry's control-plane services (Files API,
+      # agent orchestrator) run in Microsoft-managed network and reach this
+      # storage account from MS-owned IPs. With publicNetworkAccess = "Disabled"
+      # those calls would be rejected unless the calling resource's ARM ID is
+      # explicitly trusted here. See 99-docs/storage-trusted-bypass-rationale.md.
       networkAcls = {
         defaultAction = "Deny"
         bypass        = "AzureServices"
+        resourceAccessRules = concat(
+          [{
+            resourceId = azapi_resource.spoke_account.id
+            tenantId   = data.azurerm_client_config.current.tenant_id
+          }],
+          [for k in var.teams : {
+            resourceId = azapi_resource.team_project[k].id
+            tenantId   = data.azurerm_client_config.current.tenant_id
+          }],
+        )
       }
     }
   }
@@ -379,6 +397,55 @@ resource "azurerm_role_assignment" "storage_blob_contributor" {
   depends_on = [time_sleep.wait_project_identities]
 }
 
+# Spoke Foundry account MSI also needs data-plane access on agent_storage.
+# The agent service uses this identity for control-plane operations across
+# every team project hosted on this account. Single assignment — the storage
+# account is shared across all team projects on this spoke. Network-allow
+# alone is insufficient — RBAC is evaluated after networkAcls passes.
+# See 99-docs/storage-trusted-bypass-rationale.md.
+resource "azurerm_role_assignment" "spoke_account_storage_blob_contributor" {
+  count = var.enable_private_networking ? 1 : 0
+
+  scope                = azapi_resource.agent_storage[0].id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azapi_resource.spoke_account.identity[0].principal_id
+
+  depends_on = [time_sleep.wait_spoke_account[0]]
+}
+
+# ---------------------------------------------------------------------------
+# Operator RBAC — per-team 'Azure AI Project Manager' assignments.
+# Required for portal users to invoke agents in each team's Build pane /
+# playground. Subscription-level 'Azure AI User' does NOT satisfy nextgen
+# Foundry's project-scoped data-plane auth; without these entries, those
+# users see HTTP 403 on Agents_Wildcard_Get and the agent UI returns a
+# generic error. See 99-docs/core-account-admin-project-setup.md §12.
+# ---------------------------------------------------------------------------
+
+locals {
+  team_admin_assignments = flatten([
+    for team, principals in var.team_admin_principals : [
+      for p in principals : {
+        team           = team
+        object_id      = p.object_id
+        principal_type = p.principal_type
+        key            = "${team}-${p.object_id}"
+      }
+    ]
+  ])
+}
+
+resource "azurerm_role_assignment" "team_project_manager" {
+  for_each = {
+    for a in local.team_admin_assignments : a.key => a
+  }
+
+  scope                = azapi_resource.team_project[each.value.team].id
+  role_definition_name = "Azure AI Project Manager"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
+}
+
 resource "azurerm_role_assignment" "search_index_contributor" {
   for_each = var.enable_private_networking ? toset(var.teams) : toset([])
 
@@ -410,6 +477,7 @@ resource "time_sleep" "wait_rbac" {
   depends_on = [
     azurerm_role_assignment.cosmos_operator,
     azurerm_role_assignment.storage_blob_contributor,
+    azurerm_role_assignment.spoke_account_storage_blob_contributor,
     azurerm_role_assignment.search_index_contributor,
     azurerm_role_assignment.search_service_contributor,
   ]

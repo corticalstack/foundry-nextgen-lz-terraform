@@ -136,3 +136,34 @@ variable "jump_vm_admin_password" {
     Set in terraform.tfvars (gitignored) — never commit this value.
   EOT
 }
+
+variable "project_admin_principals" {
+  type = list(object({
+    object_id      = string
+    principal_type = optional(string, "User")
+  }))
+  default     = []
+  description = <<-EOT
+    Principals to grant 'Azure AI Project Manager' at the admin project resource scope
+    in the core module. Required for portal users to invoke agents in the Build pane /
+    playground — without an entry, those users see HTTP 403 on Agents_Wildcard_Get.
+    Empty list (default) means no operator RBAC is provisioned by Terraform; assign
+    via az CLI post-apply if needed.
+    See 99-docs/core-account-admin-project-setup.md §12.
+  EOT
+}
+
+variable "team_admin_principals" {
+  type = map(list(object({
+    object_id      = string
+    principal_type = optional(string, "User")
+  })))
+  default     = {}
+  description = <<-EOT
+    Per-team principals to grant 'Azure AI Project Manager' at each team's project
+    resource scope in the spoke-multi module. Keys must match var.teams entries.
+    Same rationale as project_admin_principals; default empty map means no per-team
+    operator RBAC is provisioned by Terraform.
+    See 99-docs/core-account-admin-project-setup.md §12.
+  EOT
+}

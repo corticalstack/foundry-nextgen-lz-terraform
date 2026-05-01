@@ -48,3 +48,13 @@ output "apim_subscription_keys" {
   value       = { for k, v in azurerm_api_management_subscription.team : k => v.primary_key }
   sensitive   = true
 }
+
+output "log_analytics_workspace_id" {
+  description = "Resource ID of the shared Log Analytics workspace. Pass into spoke-multi so spoke account/storage diagnostics land in the same workspace."
+  value       = azurerm_log_analytics_workspace.main.id
+}
+
+output "log_analytics_workspace_name" {
+  description = "Name of the shared Log Analytics workspace (handy for portal navigation)."
+  value       = azurerm_log_analytics_workspace.main.name
+}

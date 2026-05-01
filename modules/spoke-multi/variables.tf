@@ -108,3 +108,39 @@ variable "dns_zone_ids" {
   default     = null
   description = "Private DNS zone resource IDs created at the environment root. Required when enable_private_networking = true."
 }
+
+variable "log_analytics_workspace_id" {
+  type        = string
+  description = "Resource ID of the Log Analytics workspace to send spoke account and agent storage diagnostics to. Typically wired from module.core.log_analytics_workspace_id so all LZ telemetry lands in a single workspace."
+}
+
+variable "team_admin_principals" {
+  type = map(list(object({
+    object_id      = string
+    principal_type = optional(string, "User")
+  })))
+  default     = {}
+  description = <<-EOT
+    Per-team principals to grant 'Azure AI Project Manager' at each team's project
+    resource scope. Required for portal users to invoke agents in the Build pane /
+    playground for that team — without an entry, those users see HTTP 403 on
+    Agents_Wildcard_Get.
+
+    Keys must match entries in var.teams; values are lists of principal objects.
+    Empty map is valid (default) — nothing is assigned. Teams without any entry
+    will require operators to add RBAC manually post-apply.
+
+    Each principal:
+      object_id      — Entra ID object ID of a user, group, or service principal.
+      principal_type — One of 'User', 'Group', 'ServicePrincipal'. Defaults to 'User'.
+
+    See modules/core variable 'project_admin_principals' for the rationale and
+    99-docs/core-account-admin-project-setup.md §12 for the diagnostic-log
+    signature this RBAC clears.
+  EOT
+
+  validation {
+    condition     = alltrue([for k in keys(var.team_admin_principals) : contains(var.teams, k)])
+    error_message = "All keys in team_admin_principals must be entries in var.teams."
+  }
+}

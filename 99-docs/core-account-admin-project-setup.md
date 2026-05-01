@@ -192,6 +192,7 @@ All three are gated on `enable_private_networking = true` and each gets its own 
 - Shared key access disabled; AAD-only
 - Public access disabled
 - Naming: `stcore{customer_no_hyphens}{suffix}` (max 24 chars, no hyphens)
+- `networkAcls.resourceAccessRules` lists the Foundry account and admin project ARM IDs as trusted services. This is required *in addition* to the private endpoint because parts of the Foundry agent runtime (Files API, agent orchestrator) call into this storage account from Microsoft-managed network — the PE only handles traffic that originates inside `snet-agents`. See [`storage-trusted-bypass-rationale.md`](./storage-trusted-bypass-rationale.md) for the full explanation, the customer-VNet-vs-MS-network diagram, and the security-narrowness analysis.
 
 #### CosmosDB Account
 **File:** [`modules/core/main.tf#L677`](../modules/core/main.tf#L677)
@@ -268,6 +269,38 @@ These connection names are referenced directly in the capability host definition
 
 ### 9. Capability Host
 
+There are **two** capability host resources in this LZ, with different responsibilities. Confusing them is a common cause of trouble — in particular, attempting to put `customerSubnet` on the project-level caphost will fail with `"CapabilityHost for Project cannot be created with Subnet, please retry without subnet"`. The split is:
+
+| Caphost | Resource type | Owns | Created by |
+|---|---|---|---|
+| **Account-level** — name pattern `<account-name>@aml_aiagentservice` | `Microsoft.CognitiveServices/accounts/capabilityHosts` | `customerSubnet` (VNet injection of the agent runtime) | Auto-provisioned by Azure when the account body sets `networkInjections` |
+| **Project-level** — `caphost-admin` | `Microsoft.CognitiveServices/accounts/projects/capabilityHosts` | `vectorStoreConnections`, `storageConnections`, `threadStorageConnections` (data-plane wiring) | Explicitly declared in this Terraform |
+
+#### 9a. Account-level capability host (auto-provisioned)
+
+**Trigger:** [`modules/core/main.tf#L41`](../modules/core/main.tf#L41) — the `networkInjections` block on `azapi_resource.core_account`:
+
+```hcl
+networkInjections = [{
+  scenario                   = "agent"
+  subnetArmId                = var.private_networking.agent_subnet_id
+  useMicrosoftManagedNetwork = false
+}]
+```
+
+Setting `networkInjections` on the Foundry account causes Azure to create a child capability host called `<account-name>@aml_aiagentservice`. That child caphost is what holds `customerSubnet`, and it is what causes the agent runtime (the Container Apps environment that hosts your code interpreter sandboxes etc.) to be VNet-injected into `snet-agents`. The visible side effect is a service association link named `legionservicelink` of type `Microsoft.App/environments` appearing on the subnet.
+
+You will not see this resource in the Terraform state because it is created and managed by Azure. To inspect it directly:
+
+```bash
+az rest --method GET --url \
+  "https://management.azure.com/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<account>/capabilityHosts?api-version=2025-04-01-preview"
+```
+
+Expect to see one entry with `customerSubnet` set to the `snet-agents` resource ID and `provisioningState = Succeeded`.
+
+#### 9b. Project-level capability host (declared in Terraform)
+
 **File:** [`modules/core/main.tf#L961`](../modules/core/main.tf#L961)
 
 ```hcl
@@ -286,7 +319,9 @@ resource "azapi_resource" "admin_capability_host" {
 }
 ```
 
-The capability host is what enables the **Agent Service** and the **Foundry playground** for this project. It wires the three backing resource connections into the project so the runtime can persist threads (CosmosDB), files (Storage), and embeddings (AI Search).
+The project caphost wires the three named connections (set up in §8) into the project so the runtime can persist threads (CosmosDB), files (Storage), and embeddings (AI Search). It must **not** carry `customerSubnet` — that property belongs on the account-level caphost only.
+
+The project caphost is what enables the **Agent Service** and the **Foundry playground** for this project. Without it, agents cannot be created or invoked, even if the account-level caphost is healthy.
 
 ---
 
@@ -322,6 +357,111 @@ resource "azurerm_role_assignment" "deployer_core" {
 ```
 
 Grants the identity running `terraform apply` the `Cognitive Services User` role on the core account. This is the minimum permission needed to open the Foundry Studio playground and call models.
+
+### 12. Operator (User) RBAC
+
+**File:** [`modules/core/main.tf`](../modules/core/main.tf) — `azurerm_role_assignment.admin_project_manager`
+
+```hcl
+resource "azurerm_role_assignment" "admin_project_manager" {
+  for_each = var.enable_private_networking ? {
+    for p in var.project_admin_principals : p.object_id => p
+  } : {}
+
+  scope                = azapi_resource.admin_project[0].id
+  role_definition_name = "Azure AI Project Manager"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
+}
+```
+
+Grants the listed principals **`Azure AI Project Manager`** at the **admin project resource scope**. Required for any human user invoking agents in the Foundry portal's Build pane / playground for the admin project.
+
+The same pattern is mirrored in `modules/spoke-multi/main.tf` as `azurerm_role_assignment.team_project_manager`, scoped per team via `var.team_admin_principals` (a `map(team_name → list(principals))`).
+
+#### Why this is needed
+
+This RBAC is **not** about the project's own managed identity (covered in §7 and §10) or the deployer (covered in §11). It is about **portal users** — the humans clicking around in the Foundry UI.
+
+A subtlety of nextgen Foundry's authz: subscription-level `Azure AI User` does *not* satisfy the project-scoped data-plane checks. The portal will load, but the moment the user invokes an agent (or opens a thread, or otherwise touches the Agents API), the call to `Microsoft.CognitiveServices/.../projects/{proj}/agents/...` is rejected with HTTP 403 — even when the user is `Owner` at subscription scope.
+
+The diagnostic-log signature this RBAC clears looks like this in the workspace's `AzureDiagnostics` table:
+
+```
+OperationName  : Agents_Wildcard_Get   (or Projects_Wildcard_Get)
+ResultSignature: 403
+DurationMs     : 45-54                  (fast — pre-RBAC reject)
+apiName        : Azure AI Projects API
+objectId       : <user object id>
+```
+
+A 50ms 403 from the user's `objectId` on `*_Wildcard_Get` is the fingerprint. Adding the principal to `project_admin_principals` (or `team_admin_principals` for spoke teams) and re-applying clears it.
+
+#### Variables
+
+In `modules/core`:
+
+```hcl
+variable "project_admin_principals" {
+  type = list(object({
+    object_id      = string
+    principal_type = optional(string, "User")
+  }))
+  default = []
+}
+```
+
+In `modules/spoke-multi`:
+
+```hcl
+variable "team_admin_principals" {
+  type = map(list(object({
+    object_id      = string
+    principal_type = optional(string, "User")
+  })))
+  default = {}
+}
+```
+
+Both default to empty, so an unconfigured deployment applies cleanly with no operator RBAC. Use `principal_type = "Group"` to grant via an Entra ID security group (preferred for teams) or `"ServicePrincipal"` for automation identities.
+
+#### Example tfvars
+
+```hcl
+project_admin_principals = [
+  { object_id = "5db0aa5d-f281-47a3-9720-04727dec61e8", principal_type = "User" },
+  { object_id = "fa6d8e2f-1b45-4c9e-...",               principal_type = "Group" },
+]
+
+team_admin_principals = {
+  beta  = [{ object_id = "...", principal_type = "User" }]
+  delta = [{ object_id = "...", principal_type = "Group" }]
+  # teams without an entry simply get no operator RBAC — assign manually post-apply if needed
+}
+```
+
+#### Why `Azure AI Project Manager` (and not a narrower role)?
+
+`Azure AI Project Manager` is the role that grants enough data-plane permission for full agent operations (build, invoke, manage threads, attach files, read logs) at the project scope. A narrower fit can be tested in two directions:
+
+- **`Azure AI User` at project scope** — likely sufficient for invoking existing agents but not creating/editing them. Worth testing if you want least-privilege for non-owner users.
+- **`Cognitive Services User`** — sufficient for direct OpenAI inference but not Agents API operations.
+
+If you want least-privilege per user class, parameterise the `role_definition_name` via an additional variable; the LZ default is `Azure AI Project Manager` for simplicity.
+
+#### Migrating from imperative assignments
+
+If during initial bring-up or troubleshooting you assigned the role manually:
+
+```bash
+az role assignment create \
+  --assignee-object-id <user-object-id> \
+  --assignee-principal-type User \
+  --role "Azure AI Project Manager" \
+  --scope "/subscriptions/.../accounts/aif-core-.../projects/project-admin-..."
+```
+
+…then add the same principal to `project_admin_principals` and `terraform apply`. The azurerm provider will detect the existing assignment (it deduplicates by scope+role+principal) and either import it cleanly or no-op the create. After that, the imperative-only state is reconciled into Terraform.
 
 ---
 
