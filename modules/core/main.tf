@@ -856,6 +856,21 @@ resource "azurerm_role_assignment" "admin_storage_blob_contributor" {
   depends_on = [time_sleep.wait_admin_project_identity]
 }
 
+# Foundry account MSI also needs data-plane access on core_storage.
+# The agent service uses this identity for control-plane operations
+# (Files API uploads, blob lifecycle on user-attached files, intermediate
+# artifacts). Network-allow alone is insufficient — RBAC is evaluated
+# after networkAcls passes. See 99-docs/storage-trusted-bypass-rationale.md.
+resource "azurerm_role_assignment" "core_account_storage_blob_contributor" {
+  count = var.enable_private_networking ? 1 : 0
+
+  scope                = azapi_resource.core_storage[0].id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azapi_resource.core_account.identity[0].principal_id
+
+  depends_on = [time_sleep.wait_core_account[0]]
+}
+
 resource "azurerm_role_assignment" "admin_search_index_contributor" {
   count = var.enable_private_networking ? 1 : 0
 
@@ -887,6 +902,7 @@ resource "time_sleep" "wait_admin_rbac" {
   depends_on = [
     azurerm_role_assignment.admin_cosmos_operator,
     azurerm_role_assignment.admin_storage_blob_contributor,
+    azurerm_role_assignment.core_account_storage_blob_contributor,
     azurerm_role_assignment.admin_search_index_contributor,
     azurerm_role_assignment.admin_search_service_contributor,
   ]
